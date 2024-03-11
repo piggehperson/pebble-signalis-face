@@ -1,7 +1,7 @@
 {
   "name": "signalis-face",
   "author": "lavendork",
-  "version": "1.2.0",
+    "version": "1.3.0",
   "keywords": ["pebble-app"],
   "private": true,
   "dependencies": {
@@ -30,7 +30,7 @@
           "file": "DINMittelschriftStd.ttf",
           "characterRegex": "[0-9:.]"
         },
-	{
+	      {
           "type": "bitmap",
           "name": "MENU_ICON",
           "file": "images/menu-icon.png",
@@ -41,17 +41,17 @@
           "name": "BG_EYE",
           "file": "images/eye.png"
         },
-	{
+	      {
           "type": "bitmap",
           "name": "HUD_BLUETOOTH",
           "file": "images/hud-bluetooth.png"
         },
-	{
+	      {
           "type": "bitmap",
           "name": "HUD_BATTERY",
           "file": "images/hud-battery.png"
         },
-	{
+	      {
           "type": "bitmap",
           "name": "HUD_QUIET",
           "file": "images/hud-quiet.png"

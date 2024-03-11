@@ -31,7 +31,7 @@ static void prv_update_time() {
                                           "%H.%M0" : "%I.%M0", tick_time);
 
   // Display this time on the TextLayer
-  text_layer_set_text(s_layer_time, "s_buffer");
+  text_layer_set_text(s_layer_time, s_buffer);
 }
 
 static void prv_update_bluetooth() {

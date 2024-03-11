@@ -10,7 +10,8 @@ Planned features:
 - Monochrome support (maybe)
 - Animate Elster blinking when you return to the watchface (e.g. from an app)
 - Alternate background on low battery (dead Elster from the fakeout ending)
-- Settings page, to configure
+- Settings page, to configure:
+  - Trailing zero on/off
   - Vibrate on disconnect on/off
   - Dead Elster on/off (for user comfort, as well as aesthetics)
   - Drop shadow length on the clock

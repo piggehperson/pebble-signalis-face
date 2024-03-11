@@ -1,0 +1,62 @@
+{
+  "name": "signalis-face",
+  "author": "lavendork",
+  "version": "1.1.0",
+  "keywords": ["pebble-app"],
+  "private": true,
+  "dependencies": {
+    "pebble-effect-layer": "*"
+  },
+  "pebble": {
+    "displayName": "wake up_",
+    "uuid": "e0c1c5ad-6f3e-4a05-acb6-35d0ac455a78",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "basalt",
+      "chalk"
+    ],
+    "watchapp": {
+      "watchface": true
+    },
+    "messageKeys": [
+      "dummy"
+    ],
+    "resources": {
+      "media": [
+        {
+          "type": "font",
+          "name": "DIN_MITTELSCHRIFT_48",
+          "file": "DINMittelschriftStd.ttf",
+          "characterRegex": "[0-9:.]"
+        },
+	{
+          "type": "bitmap",
+          "name": "MENU_ICON",
+          "file": "images/menu-icon.png",
+	        "menuIcon": true
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_EYE",
+          "file": "images/eye.png"
+        },
+	{
+          "type": "bitmap",
+          "name": "HUD_BLUETOOTH",
+          "file": "images/hud-bluetooth.png"
+        },
+	{
+          "type": "bitmap",
+          "name": "HUD_BATTERY",
+          "file": "images/hud-battery.png"
+        },
+	{
+          "type": "bitmap",
+          "name": "HUD_QUIET",
+          "file": "images/hud-quiet.png"
+        }
+      ]
+    }
+  }
+}

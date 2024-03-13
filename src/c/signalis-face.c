@@ -59,6 +59,18 @@ static void prv_play_blink_animation() {
   APP_LOG(APP_LOG_LEVEL_INFO, "Playing blink");
   if (prv_is_batt_low()) { return; } //Skip playing animation if battery is low
   
+  //Clear static bitmaps from memory
+  if (s_bmp_dead) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "Destroying gbitmap");
+    gbitmap_destroy(s_bmp_dead);
+    s_bmp_dead = NULL;
+  }
+  if (s_bmp_eye) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "Destroying gbitmap");
+    gbitmap_destroy(s_bmp_eye);
+    s_bmp_eye = NULL;
+  }
+
   //Free old data
   if (s_bmp_animation) {
     APP_LOG(APP_LOG_LEVEL_INFO, "Destroying gbitmap");
@@ -80,7 +92,7 @@ static void prv_play_blink_animation() {
   GSize frame_size = gbitmap_sequence_get_bitmap_size(s_sequence_blink);
   s_bmp_animation = gbitmap_create_blank(frame_size, GBitmapFormat8Bit);
 
-  uint32_t first_delay_ms = 500;
+  uint32_t first_delay_ms = 0;
 
   // Schedule a timer to advance the first frame
   app_timer_register(first_delay_ms, timer_handler, NULL);

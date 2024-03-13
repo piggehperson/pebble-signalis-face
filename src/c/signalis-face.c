@@ -37,6 +37,7 @@ static void timer_handler(void *context) {
   // Advance to the next APNG frame, and get the delay for this frame
   if(gbitmap_sequence_update_bitmap_next_frame(s_sequence_blink, s_bmp_animation, &next_delay)) {
     // Set the new frame into the BitmapLayer
+    APP_LOG(APP_LOG_LEVEL_INFO, "Rendering sequence frame");
     bitmap_layer_set_bitmap(s_layer_background, s_bmp_animation);
     layer_mark_dirty(bitmap_layer_get_layer(s_layer_background));
 
@@ -44,6 +45,7 @@ static void timer_handler(void *context) {
     app_timer_register(next_delay, timer_handler, NULL);
   } else {
     // Destroy animation bits
+    APP_LOG(APP_LOG_LEVEL_INFO, "Sequence final frame");
     if (s_bmp_animation) {
       gbitmap_destroy(s_bmp_animation);
       s_bmp_animation = NULL;
@@ -54,22 +56,27 @@ static void timer_handler(void *context) {
 }
 
 static void prv_play_blink_animation() {
+  APP_LOG(APP_LOG_LEVEL_INFO, "Playing blink");
   if (prv_is_batt_low()) { return; } //Skip playing animation if battery is low
   
   //Free old data
   if (s_bmp_animation) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "Destroying gbitmap");
     gbitmap_destroy(s_bmp_animation);
     s_bmp_animation = NULL;
   }
   if(s_sequence_blink) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "Destroying gbitmapsequence");
     gbitmap_sequence_destroy(s_sequence_blink);
     s_sequence_blink = NULL;
   }
   
   // Create sequence
+  APP_LOG(APP_LOG_LEVEL_INFO, "Creating sequence");
   s_sequence_blink = gbitmap_sequence_create_with_resource(RESOURCE_ID_ANIM_BLINK);
   gbitmap_sequence_set_play_count(s_sequence_blink, 1);
   // Create blank GBitmap using APNG frame size
+  APP_LOG(APP_LOG_LEVEL_INFO, "Creating blank gbitmap");
   GSize frame_size = gbitmap_sequence_get_bitmap_size(s_sequence_blink);
   s_bmp_animation = gbitmap_create_blank(frame_size, GBitmapFormat8Bit);
 

@@ -34,8 +34,13 @@ static void timer_handler(void *context) {
     app_timer_register(next_delay, timer_handler, NULL);
   } else {
     // Do final frame
+    if (s_background) {
+      gbitmap_destroy(s_background);
+      s_background = NULL;
+    }
     s_background = gbitmap_create_with_resource(RESOURCE_ID_BG_EYE);
     bitmap_layer_set_bitmap(s_layer_background, s_background);
+    layer_mark_dirty(bitmap_layer_get_layer(s_layer_background));
   }
 }
 
@@ -45,10 +50,14 @@ static void prv_start_blink_animation() {
   bitmap_layer_set_bitmap(s_layer_background, s_background);
   
   //Free old data
-  // if(s_sequence_blink) {
-  //   gbitmap_sequence_destroy(s_sequence_blink);
-  //   s_sequence_blink = NULL;
-  // }
+  if (s_background) {
+    gbitmap_destroy(s_background);
+    s_background = NULL;
+  }
+  if(s_sequence_blink) {
+    gbitmap_sequence_destroy(s_sequence_blink);
+    s_sequence_blink = NULL;
+  }
   
   // Create sequence
   s_sequence_blink = gbitmap_sequence_create_with_resource(RESOURCE_ID_ANIM_BLINK);
@@ -65,12 +74,13 @@ static void prv_start_blink_animation() {
 
 static void prv_update_background(bool is_battery_low) {
   if (is_battery_low) {
+    if (s_background) { gbitmap_destroy(s_background); }
     s_background = gbitmap_create_with_resource(RESOURCE_ID_BG_DEAD);
     bitmap_layer_set_bitmap(s_layer_background, s_background);
   } else {
-    s_background = gbitmap_create_with_resource(RESOURCE_ID_BG_EYE);
-    bitmap_layer_set_bitmap(s_layer_background, s_background);
-    //prv_start_blink_animation();
+    //s_background = gbitmap_create_with_resource(RESOURCE_ID_BG_EYE);
+    //bitmap_layer_set_bitmap(s_layer_background, s_background);
+    prv_start_blink_animation();
   }
 }
 

@@ -199,6 +199,13 @@ static void prv_bluetooth_callback(bool connected) {
   }
 }
 
+void prv_did_focus_callback(bool did_focus) {
+  APP_LOG(APP_LOG_LEVEL_INFO, "%s focus", did_focus ? "Gained" : "Lost");
+  if (did_focus) {
+    prv_play_blink_animation();
+  }
+}
+
 #if defined(PBL_RECT) //Handle timeline peek animation on non-round watches
 static void prv_update_unobstructed_area(AnimationProgress progress, void *context) {
   layer_set_frame(bitmap_layer_get_layer(s_layer_background), background_layer_bounds(window_get_root_layer(s_window)));
@@ -224,6 +231,9 @@ static void prv_window_load(Window *window) {
   battery_state_service_subscribe(prv_battery_callback);
   connection_service_subscribe((ConnectionHandlers) {
     .pebble_app_connection_handler = prv_bluetooth_callback
+  });
+  app_focus_service_subscribe_handlers((AppFocusHandlers) {
+    .did_focus = prv_did_focus_callback
   });
 }
 
@@ -253,6 +263,7 @@ static void prv_window_unload(Window *window) {
   tick_timer_service_unsubscribe();
   battery_state_service_unsubscribe();
   connection_service_unsubscribe();
+  app_focus_service_unsubscribe();
 }
 
 static void prv_init(void) {

@@ -8,6 +8,7 @@ static TextLayer *s_layer_time;
 static GFont s_font_time;
 static BitmapLayer *s_layer_background;
 static GBitmap *s_background;
+static GBitmapSequence *s_sequence_blink;
 #if defined(PBL_COLOR)
 static EffectOffset s_shadow;
 static EffectLayer *s_layer_shadow;
@@ -20,6 +21,59 @@ static BitmapLayer *s_layer_hud_battery;
 static BitmapLayer *s_layer_hud_quiet;
 
 /* ---------- UI ---------- */
+static void timer_handler(void *context) {
+  uint32_t next_delay;
+
+  // Advance to the next APNG frame, and get the delay for this frame
+  if(gbitmap_sequence_update_bitmap_next_frame(s_sequence_blink, s_background, &next_delay)) {
+    // Set the new frame into the BitmapLayer
+    bitmap_layer_set_bitmap(s_layer_background, s_background);
+    layer_mark_dirty(bitmap_layer_get_layer(s_layer_background));
+
+    // Timer for that frame's delay
+    app_timer_register(next_delay, timer_handler, NULL);
+  } else {
+    // Do final frame
+    s_background = gbitmap_create_with_resource(RESOURCE_ID_BG_EYE);
+    bitmap_layer_set_bitmap(s_layer_background, s_background);
+  }
+}
+
+static void prv_start_blink_animation() {
+  //Set first frame
+  s_background = gbitmap_create_with_resource(RESOURCE_ID_BG_EYE);
+  bitmap_layer_set_bitmap(s_layer_background, s_background);
+  
+  //Free old data
+  // if(s_sequence_blink) {
+  //   gbitmap_sequence_destroy(s_sequence_blink);
+  //   s_sequence_blink = NULL;
+  // }
+  
+  // Create sequence
+  s_sequence_blink = gbitmap_sequence_create_with_resource(RESOURCE_ID_ANIM_BLINK);
+  gbitmap_sequence_set_play_count(s_sequence_blink, 1);
+  // Create blank GBitmap using APNG frame size
+  GSize frame_size = gbitmap_sequence_get_bitmap_size(s_sequence_blink);
+  s_background = gbitmap_create_blank(frame_size, GBitmapFormat8Bit);
+
+  uint32_t first_delay_ms = 500;
+
+  // Schedule a timer to advance the first frame
+  app_timer_register(first_delay_ms, timer_handler, NULL);
+}
+
+static void prv_update_background(bool is_battery_low) {
+  if (is_battery_low) {
+    s_background = gbitmap_create_with_resource(RESOURCE_ID_BG_DEAD);
+    bitmap_layer_set_bitmap(s_layer_background, s_background);
+  } else {
+    s_background = gbitmap_create_with_resource(RESOURCE_ID_BG_EYE);
+    bitmap_layer_set_bitmap(s_layer_background, s_background);
+    //prv_start_blink_animation();
+  }
+}
+
 static void prv_update_time() {
   // Get a tm structure
   time_t temp = time(NULL);
@@ -43,6 +97,7 @@ static void prv_update_battery() {
   //Check if battery is below threshold
   bool is_low = battery_state_service_peek().charge_percent <= LOW_BATT_THRESHOLD;
   layer_set_hidden(bitmap_layer_get_layer(s_layer_hud_battery), !is_low);
+  prv_update_background(is_low);
 }
 
 static void prv_update_quiet() {
@@ -60,7 +115,6 @@ static void prv_refresh_display() {
 
 static void prv_initialize_layers(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
-  GRect bounds = layer_get_bounds(window_layer);
   
   //Set up BitmapLayer
   s_background = gbitmap_create_with_resource(RESOURCE_ID_BG_EYE);
@@ -157,6 +211,7 @@ static void prv_window_unload(Window *window) {
   //Destroy layers
   bitmap_layer_destroy(s_layer_background);
   gbitmap_destroy(s_background);
+  gbitmap_sequence_destroy(s_sequence_blink);
   bitmap_layer_destroy(s_layer_hud_bluetooth);
   bitmap_layer_destroy(s_layer_hud_battery);
   bitmap_layer_destroy(s_layer_hud_quiet);

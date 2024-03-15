@@ -9,6 +9,7 @@
 #define LOW_BATT_THRESHOLD 10
 
 GRect background_layer_bounds(Layer *window_layer);
+GRect animation_layer_bounds(Layer *window_layer);
 GRect time_layer_bounds(Layer *window_layer);
 
 GRect hud_bluetooth_bounds();

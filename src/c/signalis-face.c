@@ -4,11 +4,13 @@
 
 /* ---------- Static Vars ---------- */
 static Window *s_window;
+static Layer *s_window_layer;
 static TextLayer *s_layer_time;
 static GFont s_font_time;
 static BitmapLayer *s_layer_background;
 static GBitmap *s_bmp_eye;
 static GBitmap *s_bmp_dead;
+static BitmapLayer *s_layer_animation;
 static GBitmapSequence *s_sequence_blink;
 static GBitmap *s_bmp_animation;
 #if defined(PBL_COLOR)
@@ -38,8 +40,8 @@ static void timer_handler(void *context) {
   if(gbitmap_sequence_update_bitmap_next_frame(s_sequence_blink, s_bmp_animation, &next_delay)) {
     // Set the new frame into the BitmapLayer
     APP_LOG(APP_LOG_LEVEL_INFO, "Rendering sequence frame");
-    bitmap_layer_set_bitmap(s_layer_background, s_bmp_animation);
-    layer_mark_dirty(bitmap_layer_get_layer(s_layer_background));
+    bitmap_layer_set_bitmap(s_layer_animation, s_bmp_animation);
+    layer_mark_dirty(bitmap_layer_get_layer(s_layer_animation));
 
     // Timer for that frame's delay
     app_timer_register(next_delay, timer_handler, NULL);
@@ -50,8 +52,10 @@ static void timer_handler(void *context) {
       gbitmap_destroy(s_bmp_animation);
       s_bmp_animation = NULL;
     }
-    // Set static background
-    prv_update_background();
+    if (s_layer_animation) {
+      bitmap_layer_destroy(s_layer_animation);
+      s_layer_animation = NULL;
+    }
   }
 }
 
@@ -59,19 +63,18 @@ static void prv_play_blink_animation() {
   APP_LOG(APP_LOG_LEVEL_INFO, "Playing blink");
   if (prv_is_batt_low()) { return; } //Skip playing animation if battery is low
   
-  //Clear static bitmaps from memory
+  //Clear unneeded bitmap from memory
   if (s_bmp_dead) {
-    APP_LOG(APP_LOG_LEVEL_INFO, "Destroying gbitmap");
     gbitmap_destroy(s_bmp_dead);
     s_bmp_dead = NULL;
   }
-  if (s_bmp_eye) {
-    APP_LOG(APP_LOG_LEVEL_INFO, "Destroying gbitmap");
-    gbitmap_destroy(s_bmp_eye);
-    s_bmp_eye = NULL;
-  }
 
   //Free old data
+  if (s_layer_animation) {
+      APP_LOG(APP_LOG_LEVEL_INFO, "Destroying bitmaplayer");
+      bitmap_layer_destroy(s_layer_animation);
+      s_layer_animation = NULL;
+    }
   if (s_bmp_animation) {
     APP_LOG(APP_LOG_LEVEL_INFO, "Destroying gbitmap");
     gbitmap_destroy(s_bmp_animation);
@@ -82,6 +85,11 @@ static void prv_play_blink_animation() {
     gbitmap_sequence_destroy(s_sequence_blink);
     s_sequence_blink = NULL;
   }
+  
+  //Create layer
+  s_layer_animation = bitmap_layer_create(animation_layer_bounds(s_window_layer));
+  bitmap_layer_set_compositing_mode(s_layer_animation, GCompOpSet);
+  layer_insert_above_sibling(bitmap_layer_get_layer(s_layer_animation), bitmap_layer_get_layer(s_layer_background));
   
   // Create sequence
   APP_LOG(APP_LOG_LEVEL_INFO, "Creating sequence");
@@ -100,14 +108,24 @@ static void prv_play_blink_animation() {
 
 static void prv_update_background() {
   if (prv_is_batt_low()) {
+    //Destroy old resource
+    gbitmap_destroy(s_bmp_eye);
+    s_bmp_eye = NULL;
+    //Create new resource
     if (!s_bmp_dead) {
       s_bmp_dead = gbitmap_create_with_resource(RESOURCE_ID_BG_DEAD);
     }
+    
     bitmap_layer_set_bitmap(s_layer_background, s_bmp_dead);
   } else {
+    //Destroy old resource
+    gbitmap_destroy(s_bmp_dead);
+    s_bmp_dead = NULL;
+    //Create new resource
     if (!s_bmp_eye) {
       s_bmp_eye = gbitmap_create_with_resource(RESOURCE_ID_BG_EYE);
     }
+
     bitmap_layer_set_bitmap(s_layer_background, s_bmp_eye);
   }
   layer_mark_dirty(bitmap_layer_get_layer(s_layer_background));
@@ -153,13 +171,13 @@ static void prv_refresh_display() {
 }
 
 static void prv_initialize_layers(Window *window) {
-  Layer *window_layer = window_get_root_layer(window);
+  s_window_layer = window_get_root_layer(window);
   
   //Set up BitmapLayer
-  s_layer_background = bitmap_layer_create(background_layer_bounds(window_layer));
+  s_layer_background = bitmap_layer_create(background_layer_bounds(s_window_layer));
   //Create and set appropriate background for battery level
   prv_update_background();
-  layer_add_child(window_layer, bitmap_layer_get_layer(s_layer_background));
+  layer_add_child(s_window_layer, bitmap_layer_get_layer(s_layer_background));
 
   //Set up status indicator hud
   s_hud_bluetooth = gbitmap_create_with_resource(RESOURCE_ID_HUD_BLUETOOTH);
@@ -171,18 +189,18 @@ static void prv_initialize_layers(Window *window) {
   bitmap_layer_set_bitmap(s_layer_hud_bluetooth, s_hud_bluetooth);
   bitmap_layer_set_bitmap(s_layer_hud_battery, s_hud_battery);
   bitmap_layer_set_bitmap(s_layer_hud_quiet, s_hud_quiet);
-  layer_add_child(window_layer, bitmap_layer_get_layer(s_layer_hud_bluetooth));
-  layer_add_child(window_layer, bitmap_layer_get_layer(s_layer_hud_battery));
-  layer_add_child(window_layer, bitmap_layer_get_layer(s_layer_hud_quiet));
+  layer_add_child(s_window_layer, bitmap_layer_get_layer(s_layer_hud_bluetooth));
+  layer_add_child(s_window_layer, bitmap_layer_get_layer(s_layer_hud_battery));
+  layer_add_child(s_window_layer, bitmap_layer_get_layer(s_layer_hud_quiet));
 
   // Set up TextLayer
   s_font_time = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_DIN_MITTELSCHRIFT_48));
-  s_layer_time = text_layer_create(time_layer_bounds(window_layer));
+  s_layer_time = text_layer_create(time_layer_bounds(s_window_layer));
   text_layer_set_font(s_layer_time, s_font_time);
   text_layer_set_text_color(s_layer_time, CLOCK_COLOR);
   text_layer_set_background_color(s_layer_time, GColorClear);
   text_layer_set_text_alignment(s_layer_time, GTextAlignmentCenter);
-  layer_add_child(window_layer, text_layer_get_layer(s_layer_time));
+  layer_add_child(s_window_layer, text_layer_get_layer(s_layer_time));
   
   #if defined(PBL_COLOR) //Set up EffectLayer for text shadow on color watches
   s_shadow = (EffectOffset){
@@ -191,9 +209,9 @@ static void prv_initialize_layers(Window *window) {
     .offset_y = BLUR_RADIUS,
     .offset_x = 0,
   };
-  s_layer_shadow = effect_layer_create(time_layer_bounds(window_layer));
+  s_layer_shadow = effect_layer_create(time_layer_bounds(s_window_layer));
   effect_layer_add_effect(s_layer_shadow, effect_shadow, &s_shadow);
-  layer_add_child(window_layer, effect_layer_get_layer(s_layer_shadow));
+  layer_add_child(s_window_layer, effect_layer_get_layer(s_layer_shadow));
   #endif
   // Text legibility is handled differently on BW, so we only draw the shadow on color
   

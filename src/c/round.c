@@ -10,6 +10,11 @@ GRect background_layer_bounds(Layer *window_layer) {
   // do anything here.
 }
 
+GRect animation_layer_bounds(Layer *window_layer) {
+  //Return a frame that covers specifically only the pixels of Elster's eye that change
+  return GRect(14, 24, 166, 94);
+}
+
 GRect time_layer_bounds(Layer *window_layer) {
   GRect bounds = layer_get_bounds(window_layer);
   return GRect(0,  bounds.size.h - TIME_LAYER_HEIGHT - 36, bounds.size.w, TIME_LAYER_HEIGHT);

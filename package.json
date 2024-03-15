@@ -39,7 +39,7 @@
         {
           "type": "raw",
           "name": "ANIM_BLINK",
-          "file": "animation/blink.png"
+          "file": "animation/blink-hack.png"
         },
         {
           "type": "bitmap",
